@@ -4,16 +4,41 @@
   become: true
   tasks:
 
-  - name: reboot
-    command:
-      "shutdown -r now"
+  - name: apt update cache 
+    apt:
+      update_cache: true
+    when: ansible_distribution == "Debian"
 
   - name: install apache2 package
     apt:
       name: apache2
-      state: absent
+      state: latest
+    when: ansible_distribution == "Debian"
 
   - name: add php support for apache
     apt:
      name: libapache2-mod-php
-     state: absent
+     state: latest
+    when: ansible_distribution == "Debian"
+
+
+  - name: yum update 
+    yum:
+      update_cache: yes
+    when: ansible_distribution == "CentOS"
+
+  - name: install apache2 package
+    yum:
+      name: httpd
+      state: latest
+    when: ansible_distribution == "CentOS"
+
+  - name: add php support for apache
+    yum:
+     name: php
+     state: latest
+    when: ansible_distribution == "CentOS"
+
+
+
+
