@@ -4,18 +4,18 @@
   become: true
   pre_tasks:
 
-   - name: Install updates CentOS
+   - name: Update cache CentOS
      tags: always
      yum:
-       update_only: yes
        update_cache: yes
+     changed_when: false
      when: ansible_distribution == "CentOS"
       
-   - name: Install updates Debian
+   - name: Update cache Debian
      tags: always
      apt:
-       upgrade: dist
        update_cache: yes
+     changed_when: false
      when: ansible_distribution == "Debian"
 
    - name: Copy sources list file
@@ -27,6 +27,16 @@
        group: root
        mode: 0644
      when: ansible_distribution == "Debian"
+
+- hosts: all
+  become: true
+  tasks:
+
+  - name: Add ssh key for simone
+    tags: always
+    authorized_key:
+      user: simone
+      key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIscf4J86xMJb8z+IU6ij7uxso/2Nmdvr8UCxVsn49iy ansible" 
 
 - hosts: web_servers
   become: true
@@ -51,6 +61,30 @@
        state: latest
        update_cache: yes
     when: ansible_distribution == "CentOS"
+
+  - name: Start httpd service (CentOS)
+    tags: apache,apache2,httpd
+    service:
+      name: httpd
+      state: started
+      enabled: yes
+    when: ansible_distribution == "CentOS"
+
+  - name: Change e-mail address for admin
+    tags: apache,centos,httpd
+    lineinfile:
+      path: /etc/httpd/conf/httpd.conf
+      regexp: '^ServerAdmin'
+      line: ServerAdmin somebody@somewhere.net
+    when: ansible_distribution == "CentOS"
+    register: httpd
+
+  - name: Restart httpd (CentOS)
+    tags: apache,centos,httpd
+    service:
+      name: httpd
+      state: restarted
+    when: httpd.changed
 
   - name: Copy default html file for site
     tags: apache,apache2,httpd
